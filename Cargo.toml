@@ -1,0 +1,25 @@
+[package]
+name = "adafruit-7segment"
+version = "0.1.0"
+authors = ["Karl Thorén <karl.h.thoren@gmail.com>"]
+edition = "2018"
+description = "Small wrapper on top of the `ht16k33` crate to drive an Adafruit 7-segment LED numeric Backpack"
+categories = ["hardware-support"]
+keywords = ["embedded-hal-driver", "adafruit", "ht16k33", "no_std"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kallemooo/adafruit-7segment"
+readme = "README.md"
+documentation = "https://docs.rs/adafruit-7segment"
+homepage = "https://github.com/kallemooo/adafruit-7segment"
+
+[dependencies]
+ht16k33 = { version = "0.4.0", default-features = false }
+embedded-hal  = { version = "0.2.3" }
+ascii = { version = "1.0.0", default-features = false }
+
+[dev-dependencies.embedded-hal-mock]
+version = "0.4"
+
+[features]
+default = ["std"]
+std = []
