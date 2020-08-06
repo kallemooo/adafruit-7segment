@@ -23,6 +23,7 @@
 //! ### Example on a STM32F4-Discovery board
 //! For examples on other platforms see the [`ht16k33` crate](https://crates.io/crates/ht16k33).
 //!
+//! `Cargo.toml` dependencies example:
 //! ```toml
 //! [dependencies]
 //! htk16k33 = { version = "*", default-features = false }
@@ -35,8 +36,9 @@
 //! [dependencies.stm32f4xx-hal]
 //! version = "0.8"
 //! features = ["rt", "stm32f407"]
-//!
-//!``` !ignore
+//!```
+//! Test code:
+//!```!ignore
 //! #![no_main]
 //! #![no_std]
 //!
@@ -93,18 +95,46 @@
 //!
 //!    // Putting a character in front of a float
 //!    ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('b'));
-//!    ht16k33.update_buffer_with_float(Index::Two, -3.14, 2, 10).unwrap(); //Display will read "b-3.1"
+//!    // Display will read "b-3.1"
+//!    ht16k33.update_buffer_with_float(Index::Two, -3.14, 2, 10).unwrap();
 //!
 //!    // This will panic because there aren't enough digits to display this number
 //!    ht16k33.update_buffer_with_float(Index::One, 12345., 0, 10).expect("Oops");
 //!
-//!    // Note: none of the above methods actually commit the buffer to the display, call write_display_buffer to actually send it to the display
+//!    // Note: none of the above methods actually commit the buffer to the display,
+//!    // call write_display_buffer to actually send it to the display
 //!    ht16k33.write_display_buffer().unwrap()
 //!   }
 //! loop {}
 //! }
 //!```
+//! ## All platforms, using I2C simulation
+//!```
+//! use ht16k33::i2c_mock::I2cMock;
+//! use ht16k33::{HT16K33, Dimming, Display};
+//! use adafruit_7segment::{SevenSegment, Index};
 //!
+//! // The I2C device address.
+//! const DISP_I2C_ADDR: u8 = 112;
+//!
+//! // Create a mock I2C device.
+//! let mut i2c = I2cMock::new();
+//!
+//! let mut ht16k33 = HT16K33::new(i2c, DISP_I2C_ADDR);
+//! ht16k33.initialize().expect("Failed to initialize ht16k33");
+//! ht16k33.set_display(Display::ON).expect("Could not turn on the display!");
+//! ht16k33.set_dimming(Dimming::BRIGHTNESS_MIN).expect("Could not set dimming!");
+//!
+//! // Sending individual digits
+//! ht16k33.update_buffer_with_digit(Index::One, 1);
+//! ht16k33.update_buffer_with_digit(Index::Two, 2);
+//! ht16k33.update_buffer_with_digit(Index::Three, 3);
+//! ht16k33.update_buffer_with_digit(Index::Four, 4);
+//!
+//! // Note: none of the above methods actually commit the buffer to the display,
+//! // call write_display_buffer to actually send it to the display
+//! ht16k33.write_display_buffer().unwrap()
+//!```
 //! ## Performance warning
 //!
 //! Due to the api of the ht16k33 crate the display buffer is not directly accessible so each LED that makes up the character is updated sequentially. The way the hardware on this backpack is set up allows a character to be updated by setting a single 16-bit value in the buffer. Iterating over each bit of the 16 every update is clearly not optimal but it's sufficiently fast for my current usage. If the ht16k33 crate is updated to grant mut access to the buffer this can be improved.
@@ -227,7 +257,32 @@ impl<I2C, E> SevenSegment<E> for HT16K33<I2C>
 where
     I2C: Write<Error = E> + WriteRead<Error = E>,
 {
-    /// Update the buffer with a hex digit value (0 to F) at the specified index
+    /// Update the buffer with a hex digit value (0x00 to 0x0F) at the specified index
+    /// # Arguments
+    ///
+    /// * `index` - Digit index.
+    /// * `value` - Value 0x00 to 0x0F.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ht16k33::i2c_mock::I2cMock;
+    /// use ht16k33::HT16K33;
+    /// use adafruit_7segment::{SevenSegment, Index};
+    /// # fn main() {
+    ///
+    /// // Create an I2C device.
+    /// let mut i2c = I2cMock::new();
+    ///
+    /// // The I2C device address.
+    /// const DISP_I2C_ADDR: u8 = 112;
+    ///
+    /// let mut ht16k33 = HT16K33::new(i2c, DISP_I2C_ADDR);
+    ///
+    /// // Set first digit to 9.
+    /// ht16k33.update_buffer_with_digit(Index::One, 9);
+    /// # }
+    /// ```
     fn update_buffer_with_digit(&mut self, index: Index, value: u8) {
         let value = value as usize;
         assert!(value < HEX_NUMBER_FONT_TABLE.len());
@@ -236,16 +291,90 @@ where
     }
 
     /// Update the buffer to turn the . on or off at the specified index
+    /// # Arguments
+    ///
+    /// * `index` - Digit index.
+    /// * `dot_on` - Enable or disable the dot.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ht16k33::i2c_mock::I2cMock;
+    /// use ht16k33::HT16K33;
+    /// use adafruit_7segment::{SevenSegment, Index};
+    /// # fn main() {
+    ///
+    /// // Create an I2C device.
+    /// let mut i2c = I2cMock::new();
+    ///
+    /// // The I2C device address.
+    /// const DISP_I2C_ADDR: u8 = 112;
+    ///
+    /// let mut ht16k33 = HT16K33::new(i2c, DISP_I2C_ADDR);
+    ///
+    /// // Enable dot for first digit.
+    /// ht16k33.update_buffer_with_dot(Index::One, true);
+    /// # }
+    /// ```
     fn update_buffer_with_dot(&mut self, index: Index, dot_on: bool) {
         set_bit(self, index, DOT_BIT, dot_on);
     }
 
     /// Update the buffer to turn the : on or off.
+    /// # Arguments
+    ///
+    /// * `colon_on` - Enable or disable the colon.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ht16k33::i2c_mock::I2cMock;
+    /// use ht16k33::HT16K33;
+    /// use adafruit_7segment::{SevenSegment, Index};
+    /// # fn main() {
+    ///
+    /// // Create an I2C device.
+    /// let mut i2c = I2cMock::new();
+    ///
+    /// // The I2C device address.
+    /// const DISP_I2C_ADDR: u8 = 112;
+    ///
+    /// let mut ht16k33 = HT16K33::new(i2c, DISP_I2C_ADDR);
+    ///
+    /// // Enable the colon.
+    /// ht16k33.update_buffer_with_colon(true);
+    /// # }
+    /// ```
     fn update_buffer_with_colon(&mut self, colon_on: bool) {
         set_bit(self, Index::Colon, COLON_BIT, colon_on);
     }
 
     /// Update the buffer with an ascii character at the specified index.
+    /// # Arguments
+    ///
+    /// * `index` - Digit index.
+    /// * `value` - Ascii character.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ht16k33::i2c_mock::I2cMock;
+    /// use ht16k33::HT16K33;
+    /// use adafruit_7segment::{SevenSegment, Index, AsciiChar};
+    /// # fn main() {
+    ///
+    /// // Create an I2C device.
+    /// let mut i2c = I2cMock::new();
+    ///
+    /// // The I2C device address.
+    /// const DISP_I2C_ADDR: u8 = 112;
+    ///
+    /// let mut ht16k33 = HT16K33::new(i2c, DISP_I2C_ADDR);
+    ///
+    /// // Set first digit to 'c'.
+    /// ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('c')).expect("Failed to encode char to buffer!");
+    /// # }
+    /// ```
     fn update_buffer_with_char(&mut self, index: Index, value: AsciiChar) -> Result<(), Error> {
         if value.is_ascii_hexdigit() {
             let val: u8;
@@ -271,6 +400,34 @@ where
 
     /// Update the buffer with a formatted float not starting before the specified index
     /// The logic for this is copied mostly from from the adafruit library. Only difference is this allows the start index to be > 0
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - Digit index.
+    /// * `value` - float value.
+    /// * `fractional_digits` - Number of fractional digits.
+    /// * `base` - Base to use.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ht16k33::i2c_mock::I2cMock;
+    /// use ht16k33::HT16K33;
+    /// use adafruit_7segment::{SevenSegment, Index};
+    /// # fn main() {
+    ///
+    /// // Create an I2C device.
+    /// let mut i2c = I2cMock::new();
+    ///
+    /// // The I2C device address.
+    /// const DISP_I2C_ADDR: u8 = 112;
+    ///
+    /// let mut ht16k33 = HT16K33::new(i2c, DISP_I2C_ADDR);
+    ///
+    /// // Write 9.9 from pos 2
+    /// ht16k33.update_buffer_with_float(Index::Two, 9.9, 1, 10);
+    /// # }
+    /// ```
     fn update_buffer_with_float(
         &mut self,
         index: Index,
@@ -383,6 +540,86 @@ mod tests {
     use super::*;
 
     const ADDRESS: u8 = 0;
+
+    #[test]
+    fn update_buffer_with_dot() {
+        let expectations = [];
+
+        let mut i2c = I2cMock::new(&expectations);
+        let mut ht16k33 = HT16K33::new(i2c, ADDRESS);
+
+        ht16k33.update_buffer_with_dot(Index::One, true);
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[7].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[8].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[9].bits(), 0b0000_0000);
+
+        ht16k33.update_buffer_with_dot(Index::Two, true);
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[7].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[8].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[9].bits(), 0b0000_0000);
+
+        ht16k33.update_buffer_with_dot(Index::Three, true);
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[7].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[8].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[9].bits(), 0b0000_0000);
+
+        ht16k33.update_buffer_with_dot(Index::Four, true);
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[7].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[8].bits(), 0b1000_0000);
+        assert_eq!(ht16k33.display_buffer()[9].bits(), 0b0000_0000);
+
+        i2c = ht16k33.destroy();
+        i2c.done();
+    }
+
+    #[test]
+    fn update_buffer_with_colon() {
+        let expectations = [];
+
+        let mut i2c = I2cMock::new(&expectations);
+        let mut ht16k33 = HT16K33::new(i2c, ADDRESS);
+
+        // Enable colon
+        ht16k33.update_buffer_with_colon(true);
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0010);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b0000_0000);
+
+        i2c = ht16k33.destroy();
+        i2c.done();
+    }
 
     #[test]
     fn update_buffer_with_digit() {
