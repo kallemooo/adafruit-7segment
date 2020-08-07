@@ -1,5 +1,9 @@
 # Adafruit 7segment backpack Hal
 
+[![Version info](https://img.shields.io/crates/v/adafruit-7segment.svg)](https://crates.io/crates/adafruit-7segment)
+[![Documentation](https://docs.rs/adafruit-7segment/badge.svg)](https://docs.rs/adafruit-7segment)
+[![Build Status](https://travis-ci.org/kallemooo/adafruit-7segment.svg?branch=master)](https://travis-ci.org/kallemooo/adafruit-7segment)
+
 Additional features on top of the [`ht16k33` crate][ht16k33] to drive an [Adafruit 7-segment LED Alphanumeric Backpack][Adafruit] using traits from `embedded-hal`.
 
 Derived from the [`adafruit-alphanum4` crate][adafruit-alphanum4] and modified for the 7-segment backpacks.
