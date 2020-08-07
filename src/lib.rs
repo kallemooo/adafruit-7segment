@@ -19,6 +19,8 @@
 //! * Setting or unsetting the colon.
 //! * Formatting a `f32` to 1 to 4 segments
 //!
+//! # Usage
+//!
 //! ## Embedded platforms
 //! ### Example on a STM32F4-Discovery board
 //! For examples on other platforms see the [`ht16k33` crate](https://crates.io/crates/ht16k33).
@@ -26,8 +28,8 @@
 //! `Cargo.toml` dependencies example:
 //! ```toml
 //! [dependencies]
-//! htk16k33 = { version = "*", default-features = false }
-//! adafruit-7segment = { version = "*", default-features = false  }
+//! htk16k33 = { version = "0.4.0", default-features = false }
+//! adafruit-7segment = { version = "0.1", default-features = false  }
 //! embedded-hal = "0.2.3"
 //! cortex-m = "0.6.2"
 //! cortex-m-rt = "0.6.12"
@@ -141,6 +143,7 @@
 
 #![warn(missing_docs)]
 #![warn(missing_doc_code_examples)]
+#![doc(html_root_url = "https://docs.rs/adafruit-7segment/0.1.0")]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod fonts;
@@ -506,11 +509,7 @@ where
 
         if is_negative {
             // Add the minus sign
-            update_bits(
-                self,
-                (index + (display_pos as u8)).into(),
-                MINUS_SIGN,
-            );
+            update_bits(self, (index + (display_pos as u8)).into(), MINUS_SIGN);
             // Move the current pos along
             display_pos -= 1;
         }

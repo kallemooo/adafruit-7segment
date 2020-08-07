@@ -1,24 +1,30 @@
-# adafruit-7segment backpack Hal
+# Adafruit 7segment backpack Hal
 
-Additional features on top of the [`ht16k33` crate](https://crates.io/crates/ht16k33) to drive an [Adafruit 7-segment LED Alphanumeric Backpack](https://learn.adafruit.com/adafruit-led-backpack/0-dot-56-seven-segment-backpack) using traits from `embedded-hal`.
-Derived from the [`adafruit-alphanum4` crate](https://crates.io/crates/adafruit-alphanum4) and modified for the 7-segment backpacks.
+Additional features on top of the [`ht16k33` crate][ht16k33] to drive an [Adafruit 7-segment LED Alphanumeric Backpack][Adafruit] using traits from `embedded-hal`.
+
+Derived from the [`adafruit-alphanum4` crate][adafruit-alphanum4] and modified for the 7-segment backpacks.
 
 ## Features
+
 * Sending a `u8` to one of the 4 segments. Limited to 0x00 to 0x0F.
 * Sending an `AsciiChar` to one of the 4 segments. Limited to ascii hex chars and - sign.
 * Setting or unsetting the dot associated with one of the 4 segments.
 * Setting or unsetting the colon.
 * Formatting a `f32` to 1 to 4 segments
 
+# Usage
+
 ## Embedded platforms
+
 ### Example on a STM32F4-Discovery board
-For examples on other platforms see the [`ht16k33` crate](https://crates.io/crates/ht16k33).
+
+For examples on other platforms see the [`ht16k33` crate][ht16k33].
 
 `Cargo.toml` dependencies example:
 ```toml
 [dependencies]
-htk16k33 = { version = "*", default-features = false }
-adafruit-7segment = { version = "*", default-features = false  }
+htk16k33 = { version = "0.4.0", default-features = false }
+adafruit-7segment = { version = "0.1.0", default-features = false  }
 embedded-hal = "0.2.3"
 cortex-m = "0.6.2"
 cortex-m-rt = "0.6.12"
@@ -99,7 +105,9 @@ fn main() -> ! {
 loop {}
 }
 ```
+
 ## All platforms, using I2C simulation
+
 ```rust
 use ht16k33::i2c_mock::I2cMock;
 use ht16k33::{HT16K33, Dimming, Display};
@@ -126,6 +134,30 @@ ht16k33.update_buffer_with_digit(Index::Four, 4);
 // call write_display_buffer to actually send it to the display
 ht16k33.write_display_buffer().unwrap()
 ```
+
 ## Performance warning
 
 Due to the api of the ht16k33 crate the display buffer is not directly accessible so each LED that makes up the character is updated sequentially. The way the hardware on this backpack is set up allows a character to be updated by setting a single 16-bit value in the buffer. Iterating over each bit of the 16 every update is clearly not optimal but it's sufficiently fast for my current usage. If the ht16k33 crate is updated to grant mut access to the buffer this can be improved.
+
+## Release History
+
+This is a changelog describing the most important changes per release.
+
+### Version 0.1.0 — August 7th, 2020
+
+* First version
+
+## License
+
+Licensed under the [Apache License, Version 2.0][apache] or the [MIT license][mit], at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you,
+as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
+
+[mit]: LICENSE-MIT
+[apache]: LICENSE-APACHE
+[ht16k33]: https://crates.io/crates/ht16k33
+[adafruit-alphanum4]: https://crates.io/crates/adafruit-alphanum4
+[adafruit]: https://learn.adafruit.com/adafruit-led-backpack/0-dot-56-seven-segment-backpack
