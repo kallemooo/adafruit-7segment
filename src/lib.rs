@@ -139,6 +139,8 @@
 //!
 //! Due to the api of the ht16k33 crate the display buffer is not directly accessible so each LED that makes up the character is updated sequentially. The way the hardware on this backpack is set up allows a character to be updated by setting a single 16-bit value in the buffer. Iterating over each bit of the 16 every update is clearly not optimal but it's sufficiently fast for my current usage. If the ht16k33 crate is updated to grant mut access to the buffer this can be improved.
 
+#![warn(missing_docs)]
+#![warn(missing_doc_code_examples)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod fonts;
@@ -536,7 +538,7 @@ mod tests {
     extern crate std;
     use embedded_hal_mock as hal;
 
-    use self::hal::i2c::{Mock as I2cMock};
+    use self::hal::i2c::Mock as I2cMock;
     use super::*;
 
     const ADDRESS: u8 = 0;
@@ -656,32 +658,118 @@ mod tests {
         let mut ht16k33 = HT16K33::new(i2c, ADDRESS);
 
         // Write an A
-        ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('A')).unwrap();
+        assert!(ht16k33
+            .update_buffer_with_char(Index::One, AsciiChar::new('A'))
+            .is_ok());
         assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0111_0111);
 
         // Write an a
-        ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('a')).unwrap();
+        assert!(ht16k33
+            .update_buffer_with_char(Index::One, AsciiChar::new('a'))
+            .is_ok());
         assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0111_0111);
 
         // Write an B
-        ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('B')).unwrap();
+        assert!(ht16k33
+            .update_buffer_with_char(Index::One, AsciiChar::new('B'))
+            .is_ok());
         assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0111_1100);
 
         // Write an b
-        ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('b')).unwrap();
+        assert!(ht16k33
+            .update_buffer_with_char(Index::One, AsciiChar::new('b'))
+            .is_ok());
         assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0111_1100);
 
         // Write an 0
-        ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('0')).unwrap();
+        assert!(ht16k33
+            .update_buffer_with_char(Index::One, AsciiChar::new('0'))
+            .is_ok());
         assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0011_1111);
 
         // Write an 9
-        ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('9')).unwrap();
+        assert!(ht16k33
+            .update_buffer_with_char(Index::One, AsciiChar::new('9'))
+            .is_ok());
         assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0110_1111);
 
         // Write an -
-        ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('-')).unwrap();
+        assert!(ht16k33
+            .update_buffer_with_char(Index::One, AsciiChar::new('-'))
+            .is_ok());
         assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0100_0000);
+
+        i2c = ht16k33.destroy();
+        i2c.done();
+    }
+
+    #[test]
+    fn update_buffer_with_float() {
+        let expectations = [];
+
+        let mut i2c = I2cMock::new(&expectations);
+        let mut ht16k33 = HT16K33::new(i2c, ADDRESS);
+
+        assert!(ht16k33
+            .update_buffer_with_float(Index::One, 99.9, 2, 10)
+            .is_ok());
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0110_1111);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b1110_1111);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b0110_1111);
+        assert_eq!(ht16k33.display_buffer()[7].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[8].bits(), 0b0011_1111);
+        assert_eq!(ht16k33.display_buffer()[9].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[10].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[11].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[12].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[13].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[14].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[15].bits(), 0b0000_0000);
+
+        assert!(ht16k33
+            .update_buffer_with_float(Index::One, -99.9, 2, 10)
+            .is_ok());
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0100_0000);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b0110_1111);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b1110_1111);
+        assert_eq!(ht16k33.display_buffer()[7].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[8].bits(), 0b0110_1111);
+        assert_eq!(ht16k33.display_buffer()[9].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[10].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[11].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[12].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[13].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[14].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[15].bits(), 0b0000_0000);
+
+        ht16k33.clear_display_buffer();
+        assert!(ht16k33
+            .update_buffer_with_float(Index::Two, 9.9, 1, 10)
+            .is_ok());
+        assert_eq!(ht16k33.display_buffer()[0].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[1].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[2].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[3].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[4].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[5].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[6].bits(), 0b1110_1111);
+        assert_eq!(ht16k33.display_buffer()[7].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[8].bits(), 0b0110_1111);
+        assert_eq!(ht16k33.display_buffer()[9].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[10].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[11].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[12].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[13].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[14].bits(), 0b0000_0000);
+        assert_eq!(ht16k33.display_buffer()[15].bits(), 0b0000_0000);
 
         i2c = ht16k33.destroy();
         i2c.done();
