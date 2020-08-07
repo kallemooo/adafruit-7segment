@@ -180,7 +180,7 @@ pub trait SevenSegment<E> {
 }
 
 /// The index of a segment
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 pub enum Index {
     /// First digit
     One,
@@ -190,8 +190,6 @@ pub enum Index {
     Three,
     /// Fourth digit
     Four,
-    /// Colon
-    Colon,
 }
 
 impl From<Index> for u8 {
@@ -199,9 +197,8 @@ impl From<Index> for u8 {
         match i {
             Index::One => 0,
             Index::Two => 1,
-            Index::Three => 3,
-            Index::Four => 4,
-            Index::Colon => 2,
+            Index::Three => 2,
+            Index::Four => 3,
         }
     }
 }
@@ -211,10 +208,9 @@ impl From<u8> for Index {
         match v {
             0 => Index::One,
             1 => Index::Two,
-            2 => Index::Colon,
-            3 => Index::Three,
-            4 => Index::Four,
-            _ => panic!("Invalid index > 4"),
+            2 => Index::Three,
+            3 => Index::Four,
+            _ => panic!("Invalid index > 3"),
         }
     }
 }
@@ -225,12 +221,12 @@ const DOT_BIT: u8 = 7;
 
 const COLON_BIT: u8 = 1;
 
-fn set_bit<I2C, E>(display: &mut HT16K33<I2C>, index: Index, bit: u8, on: bool)
+fn set_bit<I2C, E>(display: &mut HT16K33<I2C>, index: u8, bit: u8, on: bool)
 where
     I2C: Write<Error = E> + WriteRead<Error = E>,
 {
     debug_assert!((bit as usize) < (COMMONS_SIZE * 2));
-    let index = u8::from(index) * 2;
+    let index = index * 2;
     let row = DisplayDataAddress::from_bits_truncate(if bit < 8 { index } else { index + 1 });
     let common = DisplayData::from_bits_truncate(1 << (bit % 8));
     display.update_display_buffer(LedLocation { row, common }, on);
@@ -240,19 +236,17 @@ fn update_bits<I2C, E>(display: &mut HT16K33<I2C>, index: Index, bits: u8)
 where
     I2C: Write<Error = E> + WriteRead<Error = E>,
 {
+    let pos: u8;
+    if index > Index::Two {
+        // Move one step to compensate for colon at pos 2.
+        pos = u8::from(index) + 1u8;
+    } else {
+        pos = index.into();
+    }
     for i in 0..8 {
         let on = ((bits >> i) & 1) == 1;
-        set_bit(display, index, i, on);
+        set_bit(display, pos, i, on);
     }
-}
-
-/// Internal function to compensate for colon at pos 2.
-fn compensate_colon(index: u8) -> Index {
-    if index > 1 {
-        // Move one step to compesate for colon.
-        return (index + 1u8).into();
-    }
-    index.into()
 }
 
 impl<I2C, E> SevenSegment<E> for HT16K33<I2C>
@@ -319,7 +313,14 @@ where
     /// # }
     /// ```
     fn update_buffer_with_dot(&mut self, index: Index, dot_on: bool) {
-        set_bit(self, index, DOT_BIT, dot_on);
+        let pos: u8;
+        if index > Index::Two {
+            // Move one step to compensate for colon at pos 2.
+            pos = u8::from(index) + 1u8;
+        } else {
+            pos = index.into();
+        }
+        set_bit(self, pos, DOT_BIT, dot_on);
     }
 
     /// Update the buffer to turn the : on or off.
@@ -348,7 +349,8 @@ where
     /// # }
     /// ```
     fn update_buffer_with_colon(&mut self, colon_on: bool) {
-        set_bit(self, Index::Colon, COLON_BIT, colon_on);
+        // The colon is at address 2.
+        set_bit(self, 2u8, COLON_BIT, colon_on);
     }
 
     /// Update the buffer with an ascii character at the specified index.
@@ -437,11 +439,7 @@ where
         mut fractional_digits: u8,
         base: u8,
     ) -> Result<(), Error> {
-        let mut index = u8::from(index);
-        if index > 2 {
-            // Index 2 is the colon. Remove 1 to compensate.
-            index -= 1;
-        }
+        let index = u8::from(index);
 
         // Available digits on display
         let mut numeric_digits = 4 - index;
@@ -485,13 +483,13 @@ where
 
         if display_number == 0 {
             // Write out the 0
-            self.update_buffer_with_digit(compensate_colon(index + (display_pos as u8)), 0);
+            self.update_buffer_with_digit((index + (display_pos as u8)).into(), 0);
             // Move the current pos along
             display_pos -= 1;
         } else {
             let mut i = 0;
             while display_number != 0 || i <= fractional_digits {
-                let digit_index = compensate_colon(index + (display_pos as u8));
+                let digit_index: Index = (index + (display_pos as u8)).into();
                 // Write out the current digit
                 self.update_buffer_with_digit(digit_index, (display_number % base) as u8);
                 // Add the decimal if necessary
@@ -510,7 +508,7 @@ where
             // Add the minus sign
             update_bits(
                 self,
-                compensate_colon(index + (display_pos as u8)),
+                (index + (display_pos as u8)).into(),
                 MINUS_SIGN,
             );
             // Move the current pos along
@@ -519,12 +517,7 @@ where
 
         // Clear any remaining segments
         while display_pos >= 0 {
-            let mut digit_index = index + (display_pos as u8);
-            if digit_index > 1 {
-                // Move one step to compesate for colon.
-                digit_index += 1;
-            }
-            update_bits(self, digit_index.into(), 0);
+            update_bits(self, (index + (display_pos as u8)).into(), 0);
             // Move the current pos along
             display_pos -= 1;
         }
