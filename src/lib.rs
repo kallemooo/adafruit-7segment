@@ -268,7 +268,6 @@ where
     /// use ht16k33::i2c_mock::I2cMock;
     /// use ht16k33::HT16K33;
     /// use adafruit_7segment::{SevenSegment, Index};
-    /// # fn main() {
     ///
     /// // Create an I2C device.
     /// let mut i2c = I2cMock::new();
@@ -280,7 +279,6 @@ where
     ///
     /// // Set first digit to 9.
     /// ht16k33.update_buffer_with_digit(Index::One, 9);
-    /// # }
     /// ```
     fn update_buffer_with_digit(&mut self, index: Index, value: u8) {
         let value = value as usize;
@@ -301,7 +299,6 @@ where
     /// use ht16k33::i2c_mock::I2cMock;
     /// use ht16k33::HT16K33;
     /// use adafruit_7segment::{SevenSegment, Index};
-    /// # fn main() {
     ///
     /// // Create an I2C device.
     /// let mut i2c = I2cMock::new();
@@ -313,7 +310,6 @@ where
     ///
     /// // Enable dot for first digit.
     /// ht16k33.update_buffer_with_dot(Index::One, true);
-    /// # }
     /// ```
     fn update_buffer_with_dot(&mut self, index: Index, dot_on: bool) {
         let pos: u8;
@@ -337,7 +333,6 @@ where
     /// use ht16k33::i2c_mock::I2cMock;
     /// use ht16k33::HT16K33;
     /// use adafruit_7segment::{SevenSegment, Index};
-    /// # fn main() {
     ///
     /// // Create an I2C device.
     /// let mut i2c = I2cMock::new();
@@ -349,7 +344,6 @@ where
     ///
     /// // Enable the colon.
     /// ht16k33.update_buffer_with_colon(true);
-    /// # }
     /// ```
     fn update_buffer_with_colon(&mut self, colon_on: bool) {
         // The colon is at address 2.
@@ -368,7 +362,6 @@ where
     /// use ht16k33::i2c_mock::I2cMock;
     /// use ht16k33::HT16K33;
     /// use adafruit_7segment::{SevenSegment, Index, AsciiChar};
-    /// # fn main() {
     ///
     /// // Create an I2C device.
     /// let mut i2c = I2cMock::new();
@@ -380,7 +373,6 @@ where
     ///
     /// // Set first digit to 'c'.
     /// ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('c')).expect("Failed to encode char to buffer!");
-    /// # }
     /// ```
     fn update_buffer_with_char(&mut self, index: Index, value: AsciiChar) -> Result<(), Error> {
         if value.is_ascii_hexdigit() {
@@ -421,7 +413,6 @@ where
     /// use ht16k33::i2c_mock::I2cMock;
     /// use ht16k33::HT16K33;
     /// use adafruit_7segment::{SevenSegment, Index};
-    /// # fn main() {
     ///
     /// // Create an I2C device.
     /// let mut i2c = I2cMock::new();
@@ -433,7 +424,6 @@ where
     ///
     /// // Write 9.9 from pos 2
     /// ht16k33.update_buffer_with_float(Index::Two, 9.9, 1, 10);
-    /// # }
     /// ```
     fn update_buffer_with_float(
         &mut self,
