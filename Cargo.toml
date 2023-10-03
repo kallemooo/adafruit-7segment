@@ -13,9 +13,11 @@ documentation = "https://docs.rs/adafruit-7segment"
 homepage = "https://github.com/kallemooo/adafruit-7segment"
 
 [dependencies]
-ht16k33 = { version = "0.4.0", default-features = false }
-embedded-hal  = { version = "0.2.3" }
+ht16k33 = { version = "0.4.0", default-features = false, git="https://github.com/danjl1100/ht16k33", branch = "data-only-methods" }
 ascii = { version = "1.0.0", default-features = false }
+
+[dev-dependencies]
+embedded-hal  = { version = "1.0.0-rc.1" }
 
 [dev-dependencies.embedded-hal-mock]
 version = "0.4"

@@ -150,7 +150,6 @@ mod fonts;
 use fonts::*;
 
 pub use ascii::{AsciiChar, ToAsciiChar};
-use embedded_hal::blocking::i2c::{Write, WriteRead};
 use ht16k33::{DisplayData, DisplayDataAddress, LedLocation, COMMONS_SIZE, HT16K33};
 
 /// Possible errors returned by this crate.
@@ -163,7 +162,7 @@ pub enum Error {
 }
 
 /// Trait enabling using the Adafruit 7-segment LED numeric Backpack.
-pub trait SevenSegment<E> {
+pub trait SevenSegment {
     /// Update the buffer with a digit value (0 to F) at the specified index.
     fn update_buffer_with_digit(&mut self, index: Index, value: u8);
     /// Update the buffer to turn the . on or off at the specified index.
@@ -224,10 +223,7 @@ const DOT_BIT: u8 = 7;
 
 const COLON_BIT: u8 = 1;
 
-fn set_bit<I2C, E>(display: &mut HT16K33<I2C>, index: u8, bit: u8, on: bool)
-where
-    I2C: Write<Error = E> + WriteRead<Error = E>,
-{
+fn set_bit<I2C>(display: &mut HT16K33<I2C>, index: u8, bit: u8, on: bool) {
     debug_assert!((bit as usize) < (COMMONS_SIZE * 2));
     let index = index * 2;
     let row = DisplayDataAddress::from_bits_truncate(if bit < 8 { index } else { index + 1 });
@@ -235,10 +231,7 @@ where
     display.update_display_buffer(LedLocation { row, common }, on);
 }
 
-fn update_bits<I2C, E>(display: &mut HT16K33<I2C>, index: Index, bits: u8)
-where
-    I2C: Write<Error = E> + WriteRead<Error = E>,
-{
+fn update_bits<I2C>(display: &mut HT16K33<I2C>, index: Index, bits: u8) {
     let pos: u8;
     if index > Index::Two {
         // Move one step to compensate for colon at pos 2.
@@ -252,10 +245,7 @@ where
     }
 }
 
-impl<I2C, E> SevenSegment<E> for HT16K33<I2C>
-where
-    I2C: Write<Error = E> + WriteRead<Error = E>,
-{
+impl<I2C> SevenSegment for HT16K33<I2C> {
     /// Update the buffer with a hex digit value (0x00 to 0x0F) at the specified index
     /// # Arguments
     ///
