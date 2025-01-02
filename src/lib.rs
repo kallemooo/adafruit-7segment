@@ -375,7 +375,7 @@ where
     /// ht16k33.update_buffer_with_char(Index::One, AsciiChar::new('c')).expect("Failed to encode char to buffer!");
     /// ```
     fn update_buffer_with_char(&mut self, index: Index, value: AsciiChar) -> Result<(), Error> {
-        if value.is_ascii_hexdigit() {
+        if value.is_alphanumeric() {
             let val: u8;
             if value.is_ascii_digit() {
                 // 0-9 converted to hex value
